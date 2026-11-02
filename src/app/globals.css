@@ -1,0 +1,103 @@
+@import "tailwindcss";
+
+@theme {
+  --color-consentus-purple: #6B46C1;
+  --color-consentus-pink: #FF6B6B;
+  --color-consentus-bg: #F7FAFC;
+  --color-consentus-text: #2D3748;
+  --color-consentus-text-muted: #718096;
+}
+
+:root {
+  --consentus-purple: #6B46C1;
+  --consentus-pink: #FF6B6B;
+  --consentus-bg: #F7FAFC;
+  --consentus-text: #2D3748;
+  --consentus-text-muted: #718096;
+}
+
+html {
+  -webkit-tap-highlight-color: transparent;
+}
+
+body {
+  background-color: var(--consentus-bg);
+  color: var(--consentus-text);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  margin: 0;
+  padding: 0;
+  overscroll-behavior-y: none;
+}
+
+.input-field {
+  width: 100%;
+  background-color: #F7FAFC;
+  border: 1px solid #E2E8F0;
+  border-radius: 0.5rem;
+  padding: 0.75rem 1rem;
+  font-size: 16px;
+  color: #2D3748;
+  outline: none;
+}
+.input-field:focus {
+  box-shadow: 0 0 0 2px #6B46C1;
+}
+
+.btn-primary {
+  width: 100%;
+  background-color: #6B46C1;
+  color: white;
+  border-radius: 0.5rem;
+  padding: 0.75rem 0;
+  font-weight: 600;
+  font-size: 16px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+  transition: opacity 0.15s;
+}
+.btn-primary:active {
+  opacity: 0.8;
+}
+
+.card {
+  background-color: white;
+  border-radius: 0.75rem;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+  border: 1px solid #E2E8F0;
+  padding: 1rem;
+}
+
+/* ==========================================================
+   TabBar Chat pulse
+   Matches mobile TabBar.js Animated.loop interpolation:
+   - opacity:   0.3 ↔ 1
+   - transform: scale(1) → scale(1.3) → scale(1)
+   - 800ms each direction (1600ms full cycle)
+   ========================================================== */
+@keyframes consentus-tab-pulse {
+  0%   { opacity: 0.3; transform: scale(1); }
+  50%  { opacity: 1;   transform: scale(1.3); }
+  100% { opacity: 0.3; transform: scale(1); }
+}
+
+.consentus-tab-pulse {
+  animation: consentus-tab-pulse 1.6s ease-in-out infinite;
+  display: inline-block;
+  transform-origin: center center;
+}
+
+/* ==========================================================
+   Pinch Chat Flash
+   Matches mobile EnhancedPinchScreen.js Animated.loop:
+   - Interpolates between #FFFFFF and #FFE4E1
+   - 500ms each direction (1000ms full cycle)
+   ========================================================== */
+@keyframes pinch-flash {
+  0%   { background-color: #FFFFFF !important; opacity: 1; }
+  50%  { background-color: #FFE4E1 !important; opacity: 0.7; }
+  100% { background-color: #FFFFFF !important; opacity: 1; }
+}
+
+.animate-pinch-flash {
+  animation: pinch-flash 1s infinite ease-in-out !important;
+  border-color: #F56565 !important;
+}
