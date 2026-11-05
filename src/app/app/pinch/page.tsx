@@ -332,9 +332,11 @@ export default function PinchesPage() {
     router.push(`/app/chat/${cid}`);
   };
 
+  // ✅ FIXED: Navigate to the real profile-detail page (matches app/page.tsx pattern)
   const handleViewProfile = (otherUser: any) => {
-    sessionStorage.setItem("profileContext", JSON.stringify({ user: otherUser, currentUser }));
-    window.alert(`Navigating to ${otherUser.username}'s profile`);
+    if (!otherUser?.id) return;
+    sessionStorage.setItem("viewingUser", JSON.stringify(otherUser));
+    router.push("/app/profile-detail");
   };
 
   const showCaptionWithAutoNavigate = (caption: string, username: string, user: any) => {
@@ -406,15 +408,12 @@ export default function PinchesPage() {
                   !pinch.is_read ? "border border-[#6B46C1] bg-[#F0F4FF]" : ""
                 } ${pinch.has_caption ? "bg-[#FFF8E7] border-2 border-[#FFB347]" : ""}`}
               >
-                {/* Note badge */}
                 {pinch.has_caption && (
                   <span className="absolute -top-1.5 -right-1.5 bg-[#FFB347] text-white rounded-full w-5 h-5 flex items-center justify-center text-[10px] z-10">📝</span>
                 )}
 
-                {/* Card content — stacked on mobile, row on desktop */}
                 <div className="flex flex-col sm:flex-row sm:items-center gap-3 p-3">
                   
-                  {/* Row 1: Avatar + Info */}
                   <div className="flex items-center gap-3 flex-1 min-w-0">
                     {pinch.other_user.photos?.[0] ? (
                       <img 
@@ -450,7 +449,6 @@ export default function PinchesPage() {
                     </div>
                   </div>
 
-                  {/* Row 2: Action buttons — full-width on mobile, auto on desktop */}
                   <div className="flex items-center gap-2 shrink-0 sm:ml-auto">
                     <button 
                       onClick={() => handlePinchBack(pinch)} 
