@@ -46,18 +46,18 @@ interface PinchData {
 
 export default function PinchesPage() {
   const router = useRouter();
-  
+
   const [receivedPinches, setReceivedPinches] = useState<PinchData[]>([]);
   const [sentPinches, setSentPinches] = useState<PinchData[]>([]);
   const [rejectedPinches, setRejectedPinches] = useState<PinchData[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<"received" | "sent" | "history">("received");
-  
+
   const [unreadPinchCount, setUnreadPinchCount] = useState(0);
   const [uniqueUnreadSenders, setUniqueUnreadSenders] = useState(0);
   const [mutualUsers, setMutualUsers] = useState<Set<number>>(new Set());
   const [unreadConversations, setUnreadConversations] = useState<Set<string>>(new Set());
-  
+
   const [isDormant, setIsDormant] = useState(false);
   const [isPaidUser, setIsPaidUser] = useState(false);
 
@@ -68,8 +68,7 @@ export default function PinchesPage() {
 
   const [currentUser, setCurrentUser] = useState<any>(null);
   const socketInitialized = useRef(false);
-  
-  // Use a ref to keep track of mutuals for the socket callback
+
   const mutualUsersRef = useRef<Set<number>>(new Set());
 
   useEffect(() => {
@@ -99,10 +98,9 @@ export default function PinchesPage() {
     socketService.addListener("pinchReceived", onPinchReceived);
     socketService.addListener("pinchBackReceived", onPinchReceived);
     socketService.addListener("pinchSent", onPinchReceived);
-    
+
     socketService.addListener("standaloneMessageReceived", () => {
       console.log("🔔 Message received via socket, checking unread status in 1s...");
-      // Wait 1 second for backend to save to DB, then check
       setTimeout(() => {
         checkUnreadMessagesDirectly();
       }, 1000);
@@ -124,7 +122,7 @@ export default function PinchesPage() {
       fetchSubscriptionStatus();
       const interval = setInterval(() => {
         checkUnreadMessagesDirectly();
-      }, 5000); // Poll every 5s for faster fallback
+      }, 5000);
       return () => clearInterval(interval);
     }
   }, [currentUser?.id]);
@@ -176,7 +174,7 @@ export default function PinchesPage() {
 
     setMutualUsers(mutual);
     mutualUsersRef.current = mutual;
-    
+
     const visibleUnread = received.filter(p => !mutual.has(p.other_user.id) && !p.is_read).length;
     setUnreadPinchCount(visibleUnread);
   };
@@ -194,16 +192,15 @@ export default function PinchesPage() {
       try {
         const res = await makeAuthenticatedRequest("GET", `/standalone-chat/${cid}/messages`);
         const messages = res.data.messages || [];
-        // ✅ Count messages sent BY the other user that are unread
         const unread = messages.filter((m: any) => m.sender_id === uid && !m.read).length;
-        
+
         if (unread > 0) {
           uniqueSenders.add(uid);
           unreadConvos.add(cid);
         }
       } catch (e) {}
     }
-    
+
     setUniqueUnreadSenders(uniqueSenders.size);
     setUnreadConversations(new Set(unreadConvos));
   };
@@ -212,7 +209,7 @@ export default function PinchesPage() {
     setLoading(true);
     try {
       await checkDormantStatus();
-      
+
       const receivedRes = await pinchAPI.getReceivedPinches(currentUser!.id);
       const sentRes = await pinchAPI.getSentPinches(currentUser!.id);
       const historyRes = await pinchAPI.getPinchHistory(currentUser!.id);
@@ -231,7 +228,7 @@ export default function PinchesPage() {
           id: p.pincher_id,
           username: p.pincher_username,
           age: p.pincher_age,
-          photos: p.pincher_photos || [], 
+          photos: p.pincher_photos || [],
           user_type: p.pincher_user_type || "dating",
         },
       }));
@@ -242,7 +239,7 @@ export default function PinchesPage() {
           id: p.pinched_id,
           username: p.pinched_username,
           age: p.pinched_age || p.pincher_age,
-          photos: p.pinched_photos || p.pincher_photos || [], 
+          photos: p.pinched_photos || p.pincher_photos || [],
           user_type: p.pinched_user_type || p.pincher_user_type || "dating",
         },
       }));
@@ -353,7 +350,7 @@ export default function PinchesPage() {
 
   return (
     <div className="flex flex-col min-h-screen bg-[#F7FAFC]">
-      
+
       <style dangerouslySetInnerHTML={{ __html: `
         @keyframes pinchFlash {
           0% { background-color: #FFFFFF; opacity: 1; border-color: transparent; }
@@ -401,33 +398,73 @@ export default function PinchesPage() {
           <div className="flex justify-center items-center h-full text-[#6B46C1]">Loading pinches...</div>
         ) : (
           <div className="space-y-3">
-            
+
             {activeTab === "received" && filteredReceived.map((pinch) => (
-              <div key={pinch.id} className={`relative flex items-center p-3 rounded-xl shadow-sm bg-white ${!pinch.is_read ? "border border-[#6B46C1] bg-[#F0F4FF]" : ""} ${pinch.has_caption ? "bg-[#FFF8E7] border-2 border-[#FFB347]" : ""}`}>
+              <div
+                key={pinch.id}
+                className={`relative rounded-xl shadow-sm bg-white ${
+                  !pinch.is_read ? "border border-[#6B46C1] bg-[#F0F4FF]" : ""
+                } ${pinch.has_caption ? "bg-[#FFF8E7] border-2 border-[#FFB347]" : ""}`}
+              >
+                {/* Note badge */}
                 {pinch.has_caption && (
                   <span className="absolute -top-1.5 -right-1.5 bg-[#FFB347] text-white rounded-full w-5 h-5 flex items-center justify-center text-[10px] z-10">📝</span>
                 )}
-                
-                {pinch.other_user.photos?.[0] ? (
-                  <img src={getFullImageUrl(pinch.other_user.photos[0])} className="w-12 h-12 rounded-full mr-3 object-cover" />
-                ) : (
-                  <div className="w-12 h-12 rounded-full mr-3 bg-[#6B46C1] flex items-center justify-center text-white font-bold">{pinch.other_user.username?.charAt(0).toUpperCase()}</div>
-                )}
-                
-                <div className="flex-1 cursor-pointer" onClick={() => {
-                  if (pinch.has_caption) showCaptionWithAutoNavigate(pinch.caption!, pinch.other_user.username, pinch.other_user);
-                  else handleViewProfile(pinch.other_user);
-                }}>
-                  <p className="font-semibold text-[#2D3748] text-[15px]">
-                    {pinch.other_user.username} {!pinch.is_read && <span className="text-[#F56565] text-xs ml-1">• New</span>}
-                  </p>
-                  <p className="text-xs text-[#A0AEC0]">{new Date(pinch.created_at).toLocaleDateString()}</p>
-                  {pinch.has_caption && <p className="text-xs text-[#856404] italic mt-0.5 truncate">💬 "{pinch.caption}"</p>}
-                </div>
 
-                <div className="flex gap-2">
-                  <button onClick={() => handlePinchBack(pinch)} className="bg-[#6B46C1] text-white px-3 py-1.5 rounded-lg text-sm font-semibold">Pinch Back 👌</button>
-                  <button onClick={() => handleRejectPinch(pinch)} className="bg-[#FC8181] text-white px-2.5 py-1.5 rounded-lg text-sm font-bold">✕</button>
+                {/* Card content — stacked on mobile, row on desktop */}
+                <div className="flex flex-col sm:flex-row sm:items-center gap-3 p-3">
+                  
+                  {/* Row 1: Avatar + Info */}
+                  <div className="flex items-center gap-3 flex-1 min-w-0">
+                    {pinch.other_user.photos?.[0] ? (
+                      <img 
+                        src={getFullImageUrl(pinch.other_user.photos[0])} 
+                        className="w-12 h-12 rounded-full object-cover shrink-0" 
+                        alt={pinch.other_user.username}
+                      />
+                    ) : (
+                      <div className="w-12 h-12 rounded-full bg-[#6B46C1] flex items-center justify-center text-white font-bold shrink-0">
+                        {pinch.other_user.username?.charAt(0).toUpperCase()}
+                      </div>
+                    )}
+
+                    <div 
+                      className="flex-1 min-w-0 cursor-pointer" 
+                      onClick={() => {
+                        if (pinch.has_caption) showCaptionWithAutoNavigate(pinch.caption!, pinch.other_user.username, pinch.other_user);
+                        else handleViewProfile(pinch.other_user);
+                      }}
+                    >
+                      <p className="font-semibold text-[#2D3748] text-[15px] truncate">
+                        {pinch.other_user.username}
+                        {!pinch.is_read && <span className="text-[#F56565] text-xs ml-1">• New</span>}
+                      </p>
+                      <p className="text-xs text-[#A0AEC0]">
+                        {new Date(pinch.created_at).toLocaleDateString()}
+                      </p>
+                      {pinch.has_caption && (
+                        <p className="text-xs text-[#856404] italic mt-0.5 truncate">
+                          💬 "{pinch.caption}"
+                        </p>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Row 2: Action buttons — full-width on mobile, auto on desktop */}
+                  <div className="flex items-center gap-2 shrink-0 sm:ml-auto">
+                    <button 
+                      onClick={() => handlePinchBack(pinch)} 
+                      className="flex-1 sm:flex-none bg-[#6B46C1] text-white px-3 py-2 rounded-lg text-sm font-semibold active:opacity-80 whitespace-nowrap"
+                    >
+                      Pinch Back 👌
+                    </button>
+                    <button 
+                      onClick={() => handleRejectPinch(pinch)} 
+                      className="bg-[#FC8181] text-white px-3 py-2 rounded-lg text-sm font-bold active:opacity-80 shrink-0"
+                    >
+                      ✕
+                    </button>
+                  </div>
                 </div>
               </div>
             ))}
@@ -436,60 +473,110 @@ export default function PinchesPage() {
               const isMutual = mutualUsers.has(pinch.other_user.id);
               const cid = createConversationId(currentUser.id, pinch.other_user.id);
               const hasUnread = unreadConversations.has(cid);
-              
+
               return (
-                <div 
-                  key={pinch.id} 
-                  className={`flex items-center p-3 rounded-xl shadow-sm ${
+                <div
+                  key={pinch.id}
+                  className={`rounded-xl shadow-sm ${
                     hasUnread ? "animate-pinch-flash" : "bg-white border border-transparent"
                   }`}
                 >
-                  {pinch.other_user.photos?.[0] ? (
-                    <img src={getFullImageUrl(pinch.other_user.photos[0])} className="w-12 h-12 rounded-full mr-3 object-cover" />
-                  ) : (
-                    <div className="w-12 h-12 rounded-full mr-3 bg-[#6B46C1] flex items-center justify-center text-white font-bold">{pinch.other_user.username?.charAt(0).toUpperCase()}</div>
-                  )}
+                  <div className="flex flex-col sm:flex-row sm:items-center gap-3 p-3">
+                    <div className="flex items-center gap-3 flex-1 min-w-0">
+                      {pinch.other_user.photos?.[0] ? (
+                        <img 
+                          src={getFullImageUrl(pinch.other_user.photos[0])} 
+                          className="w-12 h-12 rounded-full object-cover shrink-0" 
+                          alt={pinch.other_user.username}
+                        />
+                      ) : (
+                        <div className="w-12 h-12 rounded-full bg-[#6B46C1] flex items-center justify-center text-white font-bold shrink-0">
+                          {pinch.other_user.username?.charAt(0).toUpperCase()}
+                        </div>
+                      )}
 
-                  <div className="flex-1 cursor-pointer" onClick={() => handleViewProfile(pinch.other_user)}>
-                    <p className="font-semibold text-[#2D3748] text-[15px]">
-                      {pinch.other_user.username}
-                      {hasUnread && <span className="text-[#F56565] text-xs ml-1">• New</span>}
-                    </p>
-                    <p className="text-xs text-[#A0AEC0]">{new Date(pinch.created_at).toLocaleDateString()}</p>
-                    {isMutual && <span className="inline-block bg-[#9F7AEA] text-white text-[10px] font-semibold px-2 py-0.5 rounded-full mt-1">✨ Mutual</span>}
+                      <div 
+                        className="flex-1 min-w-0 cursor-pointer" 
+                        onClick={() => handleViewProfile(pinch.other_user)}
+                      >
+                        <p className="font-semibold text-[#2D3748] text-[15px] truncate">
+                          {pinch.other_user.username}
+                          {hasUnread && <span className="text-[#F56565] text-xs ml-1">• New</span>}
+                        </p>
+                        <p className="text-xs text-[#A0AEC0]">
+                          {new Date(pinch.created_at).toLocaleDateString()}
+                        </p>
+                        {isMutual && (
+                          <span className="inline-block bg-[#9F7AEA] text-white text-[10px] font-semibold px-2 py-0.5 rounded-full mt-1">
+                            ✨ Mutual
+                          </span>
+                        )}
+                      </div>
+                    </div>
+
+                    <div className="shrink-0 sm:ml-auto">
+                      {isMutual ? (
+                        <button 
+                          onClick={() => handleMessage(pinch.other_user)} 
+                          className="w-full sm:w-auto bg-[#38A169] text-white px-3 py-2 rounded-lg text-sm font-semibold active:opacity-80"
+                        >
+                          Message 💬
+                        </button>
+                      ) : (
+                        <span className="inline-block w-full sm:w-auto bg-[#CBD5E0] text-[#4A5568] px-3 py-2 rounded-lg text-sm font-semibold text-center">
+                          Pending
+                        </span>
+                      )}
+                    </div>
                   </div>
-                  {isMutual ? (
-                    <button onClick={() => handleMessage(pinch.other_user)} className="bg-[#38A169] text-white px-3 py-1.5 rounded-lg text-sm font-semibold">Message 💬</button>
-                  ) : (
-                    <span className="bg-[#CBD5E0] text-[#4A5568] px-3 py-1.5 rounded-lg text-sm font-semibold">Pending</span>
-                  )}
                 </div>
               );
             })}
 
             {activeTab === "history" && rejectedPinches.map((pinch) => (
-              <div key={pinch.id} className="flex items-center p-3 rounded-xl shadow-sm bg-[#FFF5F5] border border-[#FED7D7]">
-                {pinch.other_user.photos?.[0] ? (
-                  <img src={getFullImageUrl(pinch.other_user.photos[0])} className="w-12 h-12 rounded-full mr-3 object-cover" />
-                ) : (
-                  <div className="w-12 h-12 rounded-full mr-3 bg-[#6B46C1] flex items-center justify-center text-white font-bold">{pinch.other_user.username?.charAt(0).toUpperCase()}</div>
-                )}
+              <div key={pinch.id} className="rounded-xl shadow-sm bg-[#FFF5F5] border border-[#FED7D7]">
+                <div className="flex flex-col sm:flex-row sm:items-center gap-3 p-3">
+                  <div className="flex items-center gap-3 flex-1 min-w-0">
+                    {pinch.other_user.photos?.[0] ? (
+                      <img 
+                        src={getFullImageUrl(pinch.other_user.photos[0])} 
+                        className="w-12 h-12 rounded-full object-cover shrink-0" 
+                        alt={pinch.other_user.username}
+                      />
+                    ) : (
+                      <div className="w-12 h-12 rounded-full bg-[#6B46C1] flex items-center justify-center text-white font-bold shrink-0">
+                        {pinch.other_user.username?.charAt(0).toUpperCase()}
+                      </div>
+                    )}
 
-                <div className="flex-1 cursor-pointer" onClick={() => handleViewProfile(pinch.other_user)}>
-                  <p className="font-semibold text-[#9B2C2C] text-[15px]">
-                    {pinch.other_user.username}
-                    <span className="text-xs text-[#FC8181] ml-1">• Rejected</span>
-                  </p>
-                  <p className="text-xs text-[#A0AEC0]">Rejected: {new Date(pinch.rejected_at || pinch.created_at).toLocaleDateString()}</p>
-                  {!isPaidUser && <span className="inline-block bg-[#EDF2F7] text-[#6B46C1] text-[10px] font-semibold px-2 py-0.5 rounded mt-1">🔒 Premium</span>}
+                    <div className="flex-1 min-w-0 cursor-pointer" onClick={() => handleViewProfile(pinch.other_user)}>
+                      <p className="font-semibold text-[#9B2C2C] text-[15px] truncate">
+                        {pinch.other_user.username}
+                        <span className="text-xs text-[#FC8181] ml-1">• Rejected</span>
+                      </p>
+                      <p className="text-xs text-[#A0AEC0]">
+                        Rejected: {new Date(pinch.rejected_at || pinch.created_at).toLocaleDateString()}
+                      </p>
+                      {!isPaidUser && (
+                        <span className="inline-block bg-[#EDF2F7] text-[#6B46C1] text-[10px] font-semibold px-2 py-0.5 rounded mt-1">
+                          🔒 Premium
+                        </span>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="shrink-0 sm:ml-auto">
+                    <button
+                      onClick={() => handleRestorePinch(pinch)}
+                      disabled={!isPaidUser || isDormant}
+                      className={`w-full sm:w-auto flex items-center justify-center gap-1 px-3 py-2 rounded-lg text-sm font-semibold ${
+                        isPaidUser ? "bg-[#48BB78] text-white active:opacity-80" : "bg-[#CBD5E0] text-[#718096]"
+                      }`}
+                    >
+                      🔄 {isPaidUser ? "Restore" : "🔒 Premium"}
+                    </button>
+                  </div>
                 </div>
-                <button 
-                  onClick={() => handleRestorePinch(pinch)} 
-                  disabled={!isPaidUser || isDormant}
-                  className={`flex items-center gap-1 px-3 py-1.5 rounded-lg text-sm font-semibold ${isPaidUser ? "bg-[#48BB78] text-white" : "bg-[#CBD5E0] text-[#718096]"}`}
-                >
-                  🔄 {isPaidUser ? "Restore" : "🔒 Premium"}
-                </button>
               </div>
             ))}
 
@@ -511,7 +598,9 @@ export default function PinchesPage() {
             <p className="text-5xl mb-4">😴</p>
             <h2 className="text-xl font-bold text-[#2D3748] mb-2">Account Dormant</h2>
             <p className="text-sm text-[#718096] mb-6">Your account is hidden. Pinches are frozen. Reactivate your account in Profile to interact.</p>
-            <button onClick={() => router.push("/app")} className="bg-[#6B46C1] text-white px-6 py-2.5 rounded-lg font-semibold w-full">Go to Profile</button>
+            <button onClick={() => router.push("/app")} className="bg-[#6B46C1] text-white px-6 py-2.5 rounded-lg font-semibold w-full">
+              Go to Profile
+            </button>
           </div>
         </div>
       )}
@@ -521,12 +610,17 @@ export default function PinchesPage() {
           <div className="bg-white rounded-2xl p-6 w-full max-w-sm shadow-xl">
             <div className="flex justify-between items-center mb-4">
               <h3 className="font-bold text-lg text-[#2D3748]">📝 Note from {selectedUsername}</h3>
-              <button onClick={() => { setCaptionModalVisible(false); if(pendingProfileUser) handleViewProfile(pendingProfileUser); }} className="text-gray-500 text-xl font-bold">✕</button>
+              <button 
+                onClick={() => { setCaptionModalVisible(false); if(pendingProfileUser) handleViewProfile(pendingProfileUser); }} 
+                className="text-gray-500 text-xl font-bold"
+              >
+                ✕
+              </button>
             </div>
             <p className="text-[#4A5568] mb-6 whitespace-pre-wrap">{selectedCaption}</p>
-            <button 
-              onClick={() => { setCaptionModalVisible(false); if(pendingProfileUser) handleViewProfile(pendingProfileUser); }} 
-              className="w-full bg-[#6B46C1] text-white py-3 rounded-xl font-semibold"
+            <button
+              onClick={() => { setCaptionModalVisible(false); if(pendingProfileUser) handleViewProfile(pendingProfileUser); }}
+              className="w-full bg-[#6B46C1] text-white py-3 rounded-xl font-semibold active:opacity-80"
             >
               Got it - View Profile →
             </button>
