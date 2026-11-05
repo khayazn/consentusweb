@@ -196,7 +196,7 @@ export default function PaywallModal({
               </>
             ) : (
               <>
-                💳 Subscribe Now — {displayPrice || "R40.99.00"}
+                💳 Subscribe Now — {displayPrice || "R40.99"}
                 <span className="text-xl">→</span>
               </>
             )}
@@ -217,4 +217,3 @@ export default function PaywallModal({
       </div>
     </div>
   );
-}
