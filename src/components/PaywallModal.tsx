@@ -113,7 +113,7 @@ export default function PaywallModal({
           <div className="flex flex-col items-center mb-6">
             <div className="relative bg-[#F0F4FF] border-2 border-[#6B46C1] rounded-2xl px-8 py-5 flex flex-col items-center min-w-[70%]">
               <span className="text-[40px] font-bold text-[#6B46C1] leading-none">
-                {displayPrice || "R36.00"}
+                {displayPrice || "R40.99.00"}
               </span>
               <span className="text-[16px] text-[#718096] mt-1">/ month</span>
               <span className="absolute -top-3 -right-2 bg-[#FF6B6B] text-white text-[11px] font-bold px-2.5 py-1 rounded-xl">
@@ -125,7 +125,7 @@ export default function PaywallModal({
             </p>
             {displayCurrency && displayCurrency !== "ZAR" && (
               <p className="text-[11px] italic text-[#718096] mt-1">
-                ≈ R36.00 ZAR (converted to {displayCurrency})
+                ≈ R40.99.00 ZAR (converted to {displayCurrency})
               </p>
             )}
           </div>
@@ -196,7 +196,7 @@ export default function PaywallModal({
               </>
             ) : (
               <>
-                💳 Subscribe Now — {displayPrice || "R36.00"}
+                💳 Subscribe Now — {displayPrice || "R40.99.00"}
                 <span className="text-xl">→</span>
               </>
             )}
